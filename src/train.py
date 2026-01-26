@@ -10,13 +10,16 @@ from .data_preprocessing import load_data, preprocess, split_data
 
 
 def main():
-    # MLflow experiment
+    # MLflow experiment:
+    # Clear experiment naming and comparison
+    # (all runs go into one experiment)
     mlflow.set_experiment("titanic_baseline")
 
     df = load_data()
     df = preprocess(df)
     X_train, X_test, y_train, y_test = split_data(df)
 
+    # MLflow integrated with log parameters, metrics, model artifacts
     with mlflow.start_run():
         model = LogisticRegression(max_iter=1000)
         model.fit(X_train, y_train)
