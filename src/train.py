@@ -6,7 +6,7 @@ import mlflow.sklearn
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 
-from data_preprocessing import load_data, preprocess, split_data
+from .data_preprocessing import load_data, preprocess, split_data
 
 
 def main():
