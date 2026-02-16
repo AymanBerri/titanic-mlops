@@ -1,4 +1,4 @@
-# Titanic Survival Prediction - MLOps Demo
+# Titanic Survival Prediction
 
 ## Project Description
 This project predicts the survival of Titanic passengers using machine learning. The focus is not on model complexity but on applying MLOps best practices, including reproducible experiments, model tracking, containerization, and API-based deployment.
