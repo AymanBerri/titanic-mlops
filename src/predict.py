@@ -1,18 +1,18 @@
+import logging
+from pathlib import Path
+
 import mlflow
 import mlflow.sklearn
 import pandas as pd
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-# Initialize FastAPI app
-app = FastAPI(
-    title="Titanic Survival Prediction API",
-    description="ML model for predicting Titanic passenger survival",
-    version="1.0.0",
-)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+app = FastAPI(title="Titanic Survival Prediction API", version="1.0.0")
 
 
-# Define request/response schemas
 class PassengerFeatures(BaseModel):
     pclass: int
     sex: str
@@ -23,7 +23,7 @@ class PassengerFeatures(BaseModel):
     embarked: str
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "pclass": 3,
                 "sex": "male",
@@ -42,7 +42,7 @@ class PredictionResponse(BaseModel):
     survival_status: str
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "prediction": 0,
                 "probability": 0.65,
@@ -51,141 +51,114 @@ class PredictionResponse(BaseModel):
         }
 
 
-# Load model at startup
 model = None
-model_path = None
+
+# The exact feature set used during training
+EXPECTED_FEATURES = [
+    "pclass",
+    "age",
+    "sibsp",
+    "parch",
+    "fare",
+    "sex_male",
+    "embarked_q",
+    "embarked_s",
+]
 
 
 @app.on_event("startup")
 async def load_model():
-    """Load the latest trained model from MLflow"""
     global model
-
     try:
-        # Find the latest run in MLflow
-        client = mlflow.tracking.MlflowClient()
-        experiment = mlflow.get_experiment_by_name("titanic_baseline")
-
-        if experiment is None:
-            raise Exception("No experiment found. Train the model first.")
-
-        runs = client.search_runs(
-            experiment_ids=[experiment.experiment_id],
-            order_by=["start_time DESC"],
-            max_results=1,
-        )
-
-        if not runs:
-            raise Exception("No runs found. Train the model first.")
-
-        # Load model from the latest run
-        run_id = runs[0].info.run_id
-        model_uri = f"runs:/{run_id}/model"
-        model = mlflow.sklearn.load_model(model_uri)
-
-        print(f"✅ Model loaded from run: {run_id}")
-
-    except Exception as e:
-        print(f"⚠️ Could not load model: {e}")
-        print("Make sure to train the model first with: python src/train.py")
+        # Path to the latest run (auto-detected as before)
+        base = Path("/app/mlruns")
+        experiments = [d for d in base.iterdir() if d.is_dir()]
+        for exp in experiments:
+            models_dir = exp / "models"
+            if models_dir.exists():
+                runs = [
+                    d
+                    for d in models_dir.iterdir()
+                    if d.is_dir() and d.name.startswith("m-")
+                ]
+                if runs:
+                    latest_run = max(runs, key=lambda p: p.stat().st_mtime)
+                    artifacts = latest_run / "artifacts"
+                    if artifacts.exists():
+                        # Try loading from the artifacts folder
+                        model = mlflow.sklearn.load_model(str(artifacts))
+                        logger.info(f"✅ Model loaded from {artifacts}")
+                        # Log expected features for debugging
+                        if hasattr(model, "feature_names_in_"):
+                            logger.info(f"Model expects features: \
+                                {model.feature_names_in_.tolist()}")
+                        return
+        logger.error("No model could be loaded.")
+    except Exception:
+        logger.exception("Model loading failed")
         model = None
 
 
-@app.get("/")
-async def root():
-    return {
-        "message": "Titanic Survival Prediction API",
-        "docs": "/docs",
-        "health": "/health",
-    }
-
-
 @app.get("/health")
-async def health_check():
-    """Health check endpoint"""
-    if model is None:
-        return {"status": "unhealthy", "model_loaded": False}
-    return {"status": "healthy", "model_loaded": True}
+async def health():
+    return {
+        "status": "healthy" if model else "unhealthy",
+        "model_loaded": model is not None,
+    }
 
 
 @app.post("/predict", response_model=PredictionResponse)
 async def predict(features: PassengerFeatures):
-    """Predict survival for a single passenger"""
-    global model
-
     if model is None:
-        raise HTTPException(
-            status_code=503,
-            detail="Model not loaded. Train the model first with: python src/train.py",
-        )
+        raise HTTPException(status_code=503, detail="Model not loaded")
 
     try:
-        # Convert input to DataFrame
-        input_data = pd.DataFrame([features.dict()])
+        # Build a DataFrame with the exact expected features
+        input_dict = features.dict()
+        # Start with a dictionary of zeros for all expected features
+        data = {col: 0 for col in EXPECTED_FEATURES}
+        # Fill in the ones we have
+        data["pclass"] = input_dict["pclass"]
+        data["age"] = input_dict["age"]
+        data["sibsp"] = input_dict["sibsp"]
+        data["parch"] = input_dict["parch"]
+        data["fare"] = input_dict["fare"]
+        data["sex_male"] = 1 if input_dict["sex"].lower() == "male" else 0
+        # Embarked: one-hot (embarked_q, embarked_s)
+        if input_dict["embarked"].upper() == "Q":
+            data["embarked_q"] = 1
+        elif input_dict["embarked"].upper() == "S":
+            data["embarked_s"] = 1
+        # 'C' leaves both as zero
 
-        # Apply same preprocessing as training
-        # Encode categorical variables
-        input_data["sex_male"] = (input_data["sex"] == "male").astype(int)
+        input_df = pd.DataFrame([data])
 
-        # One-hot encode embarked
-        embarked_dummies = pd.get_dummies(input_data["embarked"], prefix="embarked")
-        for col in ["embarked_Q", "embarked_S"]:
-            if col not in embarked_dummies.columns:
-                embarked_dummies[col] = 0
-
-        # Combine features
-        features_df = pd.concat(
-            [
-                input_data[["pclass", "age", "sibsp", "parch", "fare"]],
-                input_data[["sex_male"]],
-                embarked_dummies,
-            ],
-            axis=1,
-        )
-
-        # Ensure columns are in the right order
-        expected_columns = [
-            "pclass",
-            "age",
-            "sibsp",
-            "parch",
-            "fare",
-            "sex_male",
-            "embarked_Q",
-            "embarked_S",
-        ]
-
-        # Add any missing columns with 0
-        for col in expected_columns:
-            if col not in features_df.columns:
-                features_df[col] = 0
-
-        features_df = features_df[expected_columns]
-
-        # Make prediction
-        prediction = model.predict(features_df)[0]
-
-        # Get probability
-        if hasattr(model, "predict_proba"):
-            proba = model.predict_proba(features_df)[0]
-            probability = float(proba[1])  # Probability of survival
+        # Ensure column order matches model's expectation (if available)
+        if hasattr(model, "feature_names_in_"):
+            input_df = input_df[model.feature_names_in_]
         else:
-            probability = float(prediction)
+            input_df = input_df[EXPECTED_FEATURES]
 
-        # Create response
-        response = PredictionResponse(
-            prediction=int(prediction),
-            probability=probability,
-            survival_status="Survived" if prediction == 1 else "Did not survive",
+        logger.info(f"Input features: {input_df.to_dict()}")
+
+        pred = model.predict(input_df)[0]
+        proba = (
+            model.predict_proba(input_df)[0][1]
+            if hasattr(model, "predict_proba")
+            else float(pred)
         )
 
-        return response
-
+        return PredictionResponse(
+            prediction=int(pred),
+            probability=float(proba),
+            survival_status="Survived" if pred == 1 else "Did not survive",
+        )
     except Exception as e:
+        logger.error(f"Prediction error: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
 
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
