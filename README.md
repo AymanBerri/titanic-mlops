@@ -22,11 +22,11 @@ The dataset is stored in `data/raw/train.csv` and processed into `data/processed
 - `pyproject.toml` and `uv.lock` : environment and dependency management  
 
 ## Team Members
-- Coming Soon :/
+- **Coming Soon :/**
 
 ---
 
-## Checkpoint 1: Project Setup & Foundations 
+## Checkpoint 1: Project Setup & Foundations ✓
 
 - GitHub repository created with team write access
 - Python environment managed with UV (`pyproject.toml`, `uv.lock`)
@@ -59,7 +59,7 @@ A production-ready API service built with FastAPI that serves the trained model:
 ### API Schema
 
 **Request Example:**
-
+```
 {
   "pclass": 3,
   "sex": "male",
@@ -69,15 +69,15 @@ A production-ready API service built with FastAPI that serves the trained model:
   "fare": 7.25,
   "embarked": "S"
 }
-
+```
 **Response Example:**
-
+```
 {
   "prediction": 0,
   "probability": 0.105,
   "survival_status": "Did not survive"
 }
-
+```
 ### Docker Containerization
 - **Dockerfile.train**: Container for reproducible model training
 - **Dockerfile.inference**: Container for the FastAPI inference service
@@ -87,26 +87,31 @@ A production-ready API service built with FastAPI that serves the trained model:
 
 **Build the inference image:**
 
-docker build -f Dockerfile.inference -t titanic-inference:latest .
+`docker build -f Dockerfile.inference -t titanic-inference:latest .`
 
 **Run the container:**
 
-docker run -p 8000:8000 -v ${PWD}/mlruns:/app/mlruns titanic-inference:latest
+`docker run -p 8000:8000 -v ${PWD}/mlruns:/app/mlruns titanic-inference:latest`
 
 **Test the API:**
 
-python tests/test_api.py
+`python tests/test_api.py`
 
 ### API Testing
 A dedicated test script validates both health check and prediction endpoints:
 
-python tests/test_api_simple.py
+`python tests/test_api.py`
 
 **Expected output:**
-
-Status Code: 200
-Response JSON: {'prediction': 0, 'probability': 0.105, 'survival_status': 'Did not survive'}
-
+```
+Testing Titanic Survival Prediction API...
+--------------------------------------------------
+✓ Health check passed    
+✓ Prediction test passed: {'prediction': 0, 'probability': 0.105, 'survival_status': 'Did not survive'}     
+--------------------------------------------------
+Tests passed: 2/2
+✅ All tests passed!
+```
 ### Challenges & Solutions
 
 | Challenge | Solution |
@@ -139,33 +144,33 @@ Response JSON: {'prediction': 0, 'probability': 0.105, 'survival_status': 'Did n
 ## How to Run (Complete Pipeline)
 
 ### 1. Environment Setup
-uv sync
+`uv sync`
 
 ### 2. Data Preprocessing
-python src/data_preprocessing.py
+`python src/data_preprocessing.py`
 
 ### 3. Train Model
-python src/train.py
+`python src/train.py`
 
 ### 4. View MLflow Experiments
-mlflow ui
+`mlflow ui`    
 Open http://127.0.0.1:5000
 
 ### 5. Run Unit Tests
-pytest --maxfail=1 --disable-warnings -q
+`pytest --maxfail=1 --disable-warnings -q`
 
 ### 6. Check Test Coverage
-pytest --cov=src --cov-report=term-missing
+`pytest --cov=src --cov-report=term-missing`
 
 ### 7. Run API Locally (without Docker)
-uvicorn src.predict:app --reload
+`uvicorn src.predict:app --reload`
 
 ### 8. Run API with Docker
-docker build -f Dockerfile.inference -t titanic-inference:latest .
-docker run -p 8000:8000 -v ${PWD}/mlruns:/app/mlruns titanic-inference:latest
+`docker build -f Dockerfile.inference -t titanic-inference:latest .`    
+`docker run -p 8000:8000 -v ${PWD}/mlruns:/app/mlruns titanic-inference:latest`
 
 ### 9. Test API
-python tests/test_api_simple.py
+`python tests/test_api.py`
 
 ---
 
@@ -192,7 +197,3 @@ MLflow tracks all experiments with:
 - Co-authored commits to credit team members
 - Pre-commit hooks run automatically before commits
 
----
-
-## Acknowledgments
-This project was developed as part of the MLOps course (Jan 5, 2026 - Mar 15, 2026). Special thanks to the course instructors for guidance on MLOps best practices.
