@@ -3,7 +3,7 @@ from sklearn.model_selection import train_test_split
 
 
 def load_data(path="data/raw/train.csv"):
-    df = pd.read_csv(path)
+    df = pd.read_csv(path)  # use pandas to load the data
     return df
 
 
@@ -40,4 +40,3 @@ if __name__ == "__main__":
     df_processed = preprocess(df)
     df_processed.to_csv("data/processed/train_processed.csv", index=False)
     print("✅ Data preprocessing complete.")
-
