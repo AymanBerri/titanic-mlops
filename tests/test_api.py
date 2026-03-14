@@ -17,7 +17,10 @@ def test_health_endpoint(mock_get):
     mock_response = MagicMock()
     mock_response.status_code = 200
     # fmt: off
-    mock_response.json.return_value = {"status": "healthy", "model_loaded": True}
+    mock_response.json.return_value = {
+        "status": "healthy",
+        "model_loaded": True
+    }
     # fmt: on
     mock_get.return_value = mock_response
 
