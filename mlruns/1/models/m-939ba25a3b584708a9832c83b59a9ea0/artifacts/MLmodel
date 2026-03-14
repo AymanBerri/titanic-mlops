@@ -1,4 +1,4 @@
-artifact_path: file:///C:/Users/temps/Desktop/M2/MLOps/titanic-mlops/mlruns/1/models/m-38bcd150dc2f4815af406941abfc76d4/artifacts
+artifact_path: file:///C:/Users/temps/Desktop/M2/MLOps/titanic-mlops/mlruns/1/models/m-939ba25a3b584708a9832c83b59a9ea0/artifacts
 flavors:
   python_function:
     env:
@@ -14,9 +14,9 @@ flavors:
     serialization_format: cloudpickle
     sklearn_version: 1.8.0
 mlflow_version: 3.8.1
-model_id: m-38bcd150dc2f4815af406941abfc76d4
+model_id: m-939ba25a3b584708a9832c83b59a9ea0
 model_size_bytes: 931
-model_uuid: m-38bcd150dc2f4815af406941abfc76d4
+model_uuid: m-939ba25a3b584708a9832c83b59a9ea0
 prompts: null
-run_id: 110bc2a44794441bbe421e08db4b84bd
-utc_time_created: '2026-02-18 22:16:14.148387'
+run_id: 9ab31d2095524dc999295a1d7254b6ac
+utc_time_created: '2026-02-18 23:20:50.225378'

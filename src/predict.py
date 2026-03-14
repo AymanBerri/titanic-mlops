@@ -7,6 +7,8 @@ import pandas as pd
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
+from src.monitoring import check_model_drift, monitor, monitor_endpoint
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -66,6 +68,18 @@ EXPECTED_FEATURES = [
 ]
 
 
+@app.get("/metrics")
+async def get_metrics():
+    """Return monitoring metrics."""
+    return monitor.get_stats()
+
+
+@app.get("/drift-check")
+async def drift_check():
+    """Check for model drift."""
+    return check_model_drift()
+
+
 @app.on_event("startup")
 async def load_model():
     global model
@@ -100,6 +114,7 @@ async def load_model():
 
 
 @app.get("/health")
+@monitor_endpoint
 async def health():
     return {
         "status": "healthy" if model else "unhealthy",
@@ -107,7 +122,8 @@ async def health():
     }
 
 
-@app.post("/predict", response_model=PredictionResponse)
+@app.post("/predict")
+@monitor_endpoint
 async def predict(features: PassengerFeatures):
     if model is None:
         raise HTTPException(status_code=503, detail="Model not loaded")
