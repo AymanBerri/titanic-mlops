@@ -69,7 +69,9 @@ def monitor_endpoint(func):
         try:
             response = await func(*args, **kwargs)
             status_code = (
+                # fmt: off
                 response.status_code if hasattr(response, "status_code") else 200
+                # fmt: on
             )
             return response
         finally:
@@ -83,5 +85,7 @@ def check_model_drift():
     """Basic check for model performance drift."""
     # This would compare recent predictions vs training distribution
     # For demo, just log a check
+    # fmt: off
     monitor_logger.info("Model drift check performed - no significant drift detected")
+    # fmt: on
     return {"status": "healthy", "drift_detected": False}
