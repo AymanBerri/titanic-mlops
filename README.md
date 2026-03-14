@@ -285,7 +285,7 @@ MLflow tracks all experiments with:
 ---
 
 ## Demo Video
-Watch the demo: [Link to unlisted YouTube video - coming soon]
+[Watch the demo - Click here... ](https://youtu.be/SIPjQRGk_Xg)
 
 ---
 
