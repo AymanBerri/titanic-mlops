@@ -1,5 +1,7 @@
 # Titanic Survival Prediction - MLOps Project
 
+![CI Pipeline](https://github.com/AymanBerri/titanic-mlops/actions/workflows/ci.yml/badge.svg)
+
 ## Project Description
 This project predicts the survival of Titanic passengers using machine learning. The focus is not on model complexity but on applying MLOps best practices, including reproducible experiments, model tracking, containerization, and API-based deployment. Built as part of the MLOps course final project.
 
@@ -12,17 +14,31 @@ Titanic dataset from Kaggle: https://www.kaggle.com/c/titanic/data
 The dataset is stored in `data/raw/train.csv` and processed into `data/processed/train_processed.csv`.
 
 ## Project Structure
-- `data/raw` : original CSV files  
-- `data/processed` : cleaned and preprocessed data  
-- `src/` : source code including preprocessing, training, prediction, and utility scripts  
-- `tests/` : unit tests for preprocessing, training, and API  
-- `mlruns/` : MLflow experiment tracking with model artifacts  
-- `Dockerfile.train` : container for training  
-- `Dockerfile.inference` : container for inference API  
-- `pyproject.toml` and `uv.lock` : environment and dependency management  
+```
+├── .github/workflows/      # CI/CD pipeline with GitHub Actions
+├── data/                   # Raw and processed data
+├── src/                    # Source code
+│   ├── data_preprocessing.py
+│   ├── train.py
+│   ├── predict.py          # FastAPI application
+│   ├── monitoring.py       # Monitoring system
+│   └── utils.py
+├── tests/                  # Unit and API tests
+│   ├── test_data.py
+│   ├── test_train.py
+│   └── test_api.py
+├── mlruns/                  # MLflow experiment tracking
+├── Dockerfile.train         # Container for training
+├── Dockerfile.inference     # Container for inference API
+├── pyproject.toml           # Dependencies
+└── uv.lock                  # Locked dependencies
+```
 
 ## Team Members
-- **Coming Soon :/**
+- **Ayman Berri**: Project setup, environment management, preprocessing, training pipeline, MLflow integration, code reviews
+- **Husnain Ali**: FastAPI implementation, model loading logic, API testing, Docker configuration
+- **Muhammad Irfan**: Documentation, testing, final integration, README updates
+- **Usama Lodhi**: Monitoring implementation, CI/CD pipeline, final report, drift detection, code reviews
 
 ---
 
@@ -55,6 +71,8 @@ A production-ready API service built with FastAPI that serves the trained model:
 - **POST /predict** - Accepts passenger features and returns survival prediction
 - **GET /health** - Health check endpoint to verify model loading
 - **GET /** - API information with documentation link
+- **GET /metrics** - Monitoring metrics endpoint
+- **GET /drift-check** - Model drift detection endpoint
 
 ### API Schema
 
@@ -86,21 +104,24 @@ A production-ready API service built with FastAPI that serves the trained model:
 ### Running with Docker
 
 **Build the inference image:**
-
-`docker build -f Dockerfile.inference -t titanic-inference:latest .`
+```
+docker build -f Dockerfile.inference -t titanic-inference:latest .
+```
 
 **Run the container:**
-
-`docker run -p 8000:8000 -v ${PWD}/mlruns:/app/mlruns titanic-inference:latest`
+```
+docker run -p 8000:8000 -v ${PWD}/mlruns:/app/mlruns titanic-inference:latest
+```
 
 **Test the API:**
-
-`python tests/test_api.py`
+```
+python tests/test_api.py
+```
 
 ### API Testing
 A dedicated test script validates both health check and prediction endpoints:
 
-`python tests/test_api.py`
+python tests/test_api.py
 
 **Expected output:**
 ```
@@ -112,32 +133,51 @@ Testing Titanic Survival Prediction API...
 Tests passed: 2/2
 ✅ All tests passed!
 ```
-### Challenges & Solutions
+---
 
-| Challenge | Solution |
-|-----------|----------|
-| MLflow experiment corruption (missing meta.yaml) | Cleaned corrupted experiments and retrained with proper logging |
-| Feature mismatch between training and prediction | Aligned preprocessing to use consistent 8 features across both pipelines |
-| Docker volume mounting issues on Windows | Used absolute paths with proper Windows syntax for volume mounts |
-| Model not found in expected path | Implemented dynamic path finding that scans artifacts directory |
-| Flake8 linting errors on long lines | Refactored code to comply with 88-character line limit |
+## Checkpoint 4: Monitoring & CI/CD ✓
 
-### Key Learnings
-- MLflow tracking requires consistent artifact paths
-- Feature engineering must be identical in training and serving
-- Docker on Windows requires careful volume mount syntax
-- Pre-commit hooks enforce code quality but require iterative fixes
-- Team collaboration via GitHub with co-authored commits ensures proper credit
+### Monitoring System
+The API includes basic monitoring:
+- Request count tracking
+- Response time measurement
+- Health check endpoint
+- Model drift detection
+- Logging to `monitoring.log`
+
+Metrics are available at `/metrics` endpoint.
+
+### CI/CD Pipeline with GitHub Actions
+- Automated testing on every push to main
+- Code style checks with black, flake8, isort
+- Dependency installation with pip
+- Test execution with pytest
+- Status badge in README shows passing/failing
+
+View the pipeline: `https://github.com/AymanBerri/titanic-mlops/actions`
 
 ---
 
-## Checkpoint 4: Monitoring & Final Report (Upcoming)
+## System Architecture
 
-- Implement basic monitoring strategy
-- Add request logging and metrics
-- Prepare final project report
-- Create demo video (≤10 minutes)
-- CI/CD pipeline integration
+The system consists of:
+- **Training Pipeline**: Preprocessing → Model Training → MLflow Tracking
+- **Inference Service**: FastAPI → Model Loading → Prediction Endpoint
+- **Monitoring**: Request logging, response time tracking, drift detection
+- **Containerization**: Docker for both training and inference
+- **Experiment Tracking**: MLflow for parameter/metric logging
+- **CI/CD**: GitHub Actions for automated testing
+
+## MLOps Practices Implemented
+
+1. **Reproducibility**: UV for dependency management, Docker containers
+2. **Version Control**: Git with pre-commit hooks
+3. **Experiment Tracking**: MLflow for parameters, metrics, artifacts
+4. **Testing**: Unit tests with pytest (60%+ coverage)
+5. **Model Serving**: FastAPI with clear schema
+6. **Containerization**: Docker for consistent deployment
+7. **Monitoring**: Request logging, performance metrics, drift detection
+8. **CI/CD**: GitHub Actions workflow for automated testing
 
 ---
 
@@ -153,7 +193,7 @@ Tests passed: 2/2
 `python src/train.py`
 
 ### 4. View MLflow Experiments
-`mlflow ui`    
+`mlflow ui`     
 Open http://127.0.0.1:5000
 
 ### 5. Run Unit Tests
@@ -166,11 +206,14 @@ Open http://127.0.0.1:5000
 `uvicorn src.predict:app --reload`
 
 ### 8. Run API with Docker
-`docker build -f Dockerfile.inference -t titanic-inference:latest .`    
+`docker build -f Dockerfile.inference -t titanic-inference:latest .`     
 `docker run -p 8000:8000 -v ${PWD}/mlruns:/app/mlruns titanic-inference:latest`
 
 ### 9. Test API
 `python tests/test_api.py`
+
+### 10. Check Monitoring Logs
+`cat monitoring.log`
 
 ---
 
@@ -180,8 +223,6 @@ Pre-commit hooks ensure code quality on every commit:
 - **isort**: Import sorting
 - **flake8**: Linting with line length limit (88 characters)
 
----
-
 ## MLflow Tracking
 MLflow tracks all experiments with:
 - **Parameters**: Model type, hyperparameters
@@ -189,11 +230,64 @@ MLflow tracks all experiments with:
 - **Artifacts**: Trained model files
 - **Experiment name**: `titanic_baseline`
 
----
-
 ## Git Workflow
 - Feature branches with pull requests
 - Meaningful commit messages
 - Co-authored commits to credit team members
+- PR reviews required before merging
 - Pre-commit hooks run automatically before commits
 
+---
+
+## Challenges & Solutions
+
+| Challenge | Solution |
+|-----------|----------|
+| MLflow experiment corruption (missing meta.yaml) | Cleaned corrupted experiments and retrained with proper logging |
+| Feature mismatch between training and prediction | Aligned preprocessing to use consistent 8 features across both pipelines |
+| Docker volume mounting issues on Windows | Used absolute paths with proper Windows syntax for volume mounts |
+| Model not found in expected path | Implemented dynamic path finding that scans artifacts directory |
+| Flake8 linting errors on long lines | Refactored code to comply with 88-character line limit |
+| CI/CD failing due to missing dependencies | Added explicit pip install for all required packages |
+| API tests failing in CI | Used mocks to test without running live server |
+| MLflow permission issues in CI | Configured temp directory for MLflow in CI environment |
+
+## Key Learnings
+- MLflow tracking requires consistent artifact paths
+- Feature engineering must be identical in training and serving
+- Docker on Windows requires careful volume mount syntax
+- Pre-commit hooks enforce code quality but require iterative fixes
+- Team collaboration via GitHub with PR reviews ensures proper credit
+- CI/CD pipelines need explicit dependency management
+- Mocking is essential for testing in CI environments
+
+---
+
+## Limitations & Future Work
+
+### Current Limitations
+- Simple logistic regression model (baseline only)
+- Basic monitoring without alerting
+- No automated retraining
+- No A/B testing capability
+- Local MLflow tracking only (no remote server)
+
+### Future Improvements
+- Add more sophisticated models (Random Forest, XGBoost)
+- Implement real-time alerting (Slack/Email)
+- Set up automated retraining pipeline
+- Add A/B testing framework
+- Deploy to cloud (AWS/GCP/Azure)
+- Add model versioning and canary deployments
+- Set up remote MLflow tracking server
+- Add more comprehensive monitoring dashboards
+
+---
+
+## Demo Video
+Watch the demo: [Link to unlisted YouTube video - coming soon]
+
+---
+
+## Acknowledgments
+This project was developed as part of the MLOps course (Jan 5, 2026 - Mar 15, 2026). Special thanks to the course instructors for guidance on MLOps best practices.
