@@ -74,7 +74,7 @@ def test_prediction_endpoint(mock_post):
 
 
 if __name__ == "__main__":
-    print("Testing Titanic Survival Prediction API (with mocks)...")
+    print("Testing Titanic Survival Prediction API " "(with mocks)...")
     print("-" * 50)
 
     # Run tests
