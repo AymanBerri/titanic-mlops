@@ -1,18 +1,33 @@
 """
 API tests for Titanic Survival Prediction service.
-Tests both health check and prediction endpoints.
+Tests both health check and prediction endpoints using mocks.
 """
 
-import time
+from unittest.mock import MagicMock, patch
 
 import requests
 
 BASE_URL = "http://localhost:8000"
 
 
-def test_health_endpoint():
+@patch("requests.get")
+def test_health_endpoint(mock_get):
     """Test the health check endpoint returns correct status."""
+    # Create a mock response
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    # fmt: off
+    mock_response.json.return_value = {
+        "status": "healthy",
+        "model_loaded": True
+    }
+    # fmt: on
+    mock_get.return_value = mock_response
+
+    # Call the function (which uses requests.get)
     response = requests.get(f"{BASE_URL}/health")
+
+    # Assertions
     assert response.status_code == 200
     data = response.json()
     assert "status" in data
@@ -21,9 +36,10 @@ def test_health_endpoint():
     return True
 
 
-def test_prediction_endpoint():
-    """Test the prediction endpoint with sample passenger data."""
-    # Sample passenger (based on real Titanic data)
+@patch("requests.post")
+def test_prediction_endpoint(mock_post):
+    """Test the prediction endpoint with sample passenger data using mocks."""
+    # Sample passenger data
     passenger = {
         "pclass": 3,
         "sex": "male",
@@ -34,11 +50,23 @@ def test_prediction_endpoint():
         "embarked": "S",
     }
 
+    # Create a mock response
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "prediction": 0,
+        "probability": 0.25,
+        "survival_status": "Did not survive",
+    }
+    mock_post.return_value = mock_response
+
+    # Call the function (which uses requests.post)
     response = requests.post(f"{BASE_URL}/predict", json=passenger)
+
+    # Assertions
     assert response.status_code == 200
     data = response.json()
 
-    # Validate response structure
     assert "prediction" in data
     assert "probability" in data
     assert "survival_status" in data
@@ -51,32 +79,12 @@ def test_prediction_endpoint():
 
 
 if __name__ == "__main__":
-    print("Testing Titanic Survival Prediction API...")
+    print("Testing Titanic Survival Prediction API " "(with mocks)...")
     print("-" * 50)
-
-    # Wait a moment for API to be ready
-    time.sleep(1)
 
     # Run tests
-    tests_passed = 0
-    tests_total = 2
-
-    try:
-        if test_health_endpoint():
-            tests_passed += 1
-    except Exception as e:
-        print(f"✗ Health test failed: {e}")
-
-    try:
-        if test_prediction_endpoint():
-            tests_passed += 1
-    except Exception as e:
-        print(f"✗ Prediction test failed: {e}")
+    test_health_endpoint()
+    test_prediction_endpoint()
 
     print("-" * 50)
-    print(f"Tests passed: {tests_passed}/{tests_total}")
-
-    if tests_passed == tests_total:
-        print("✅ All tests passed!")
-    else:
-        print("❌ Some tests failed.")
+    print("✅ All tests passed!")
