@@ -20,9 +20,8 @@ jobs:
     
     - name: Install dependencies
       run: |
-        pip install uv
-        uv sync
-        pip install pytest pytest-cov requests
+        python -m pip install --upgrade pip
+        pip install pandas numpy scikit-learn mlflow fastapi uvicorn requests pytest pytest-cov
     
     - name: Run tests
       run: |
